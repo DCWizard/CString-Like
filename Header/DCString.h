@@ -172,20 +172,6 @@
                   TheRestStr, TheRestLen);
         memcpy(&TheStrBuffer[StartWhere],   ThisInsert, InsertLength);
         TheLen                = strlen(TheStrBuffer);
-
-        // CSTR pszBuffer         = GetBuffer( TheNewLen );
-        // // move existing bytes up (MOVE THE REST OF THE STR MAKING ROOM FOR THE INSERT)
-        // Checked::memmove_s((pszBuffer + ThisStart + InsertLength), 
-        //                    (TheNewLen - ThisStart - InsertLength + 1) * sizeof( XCHAR ),  // WHO'S THE RETARDED IMBECILE WHO CAME UP WITH THAT?
-        //                    (pszBuffer + ThisStart), 
-        //                    (TheNewLen - ThisStart - InsertLength + 1) * sizeof( XCHAR ) 
-        //                    );
-        // Checked::memcpy_s( (pszBuffer + ThisStart), 
-        //                    (InsertLength * sizeof( XCHAR )), 
-        //                    (ThisInsert), 
-        //                    (InsertLength*sizeof( XCHAR )) 
-        //                    );
-        // ReleaseBufferSetLength( TheNewLen );
         LeaveCriticalArea ();
       }
       return( TheNewLen );
@@ -498,8 +484,8 @@
         int ISkip             = int( Pez - TheStrBuffer );
         int TheNewLen         = TheLen   - ISkip;
         memmove_s(              TheStrBuffer, 
-                                (TheNewLen + 1),  // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?  
-                                Pez, 
+                                (TheNewLen + 1),   // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?  
+                                Pez,               // WHAT? ARE YOU GOING TO SHRINK IT, IF IT'S SMALLER?
                                 (TheNewLen + 1) 
                   );
         TheLen                = strlen(TheStrBuffer);    
