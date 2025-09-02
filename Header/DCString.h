@@ -29,7 +29,7 @@
   #define DSTR  DCStr
   #define CDSTR const DCStr
   
-// ---------------- class DCStr --------------------
+// ---------------- class DCStr -----------
   class DCStr {
    public: 
     PSTR          TheStrBuffer        = NULL;
@@ -41,18 +41,18 @@
     #define DCStrBufferZone DCStrAppendZone + DCStrEndingZone
     
     HANDLE        StrMutex            = NULL;
-    HANDLE        InitStrMutex(){
+    HANDLE        InitStrMutex    (){
       if(StrMutex  == NULL){
         StrMutex    = CreateMutex(NULL, FALSE, NULL);
       }
       return StrMutex;
     }
-    void          DelStrMutex (){
+    void          DelStrMutex     (){
       if(StrMutex){
         CloseHandle(StrMutex); StrMutex = NULL; 
       }  
     }
-    BOOL          AcquireStrMutex(DWORD ThisTimeout = INFINITE){
+    BOOL          AcquireStrMutex (DWORD ThisTimeout = INFINITE){
       if(StrMutex){
         if(WAIT_OBJECT_0 == WaitForSingleObject(StrMutex, ThisTimeout)){
           return true;
@@ -60,17 +60,18 @@
       }
       return false;
     }
-    BOOL          ReleaseStrMutex(){
+    BOOL          ReleaseStrMutex (){
       if(StrMutex){
         return ReleaseMutex(StrMutex);
       }
       return false;
     }
-    void InitDCtring(){
+
+    void          InitDCtring     (){
       InitStrMutex();
     } 
 
-    ~DCStr                    () throw(){
+    ~DCStr                        () throw(){
       if((TheStrBuffer)){
         free(TheStrBuffer);
         TheStrBuffer        = NULL;
@@ -79,7 +80,7 @@
       }
       DelStrMutex();
     }
-    DCStr                     () throw(){
+    DCStr                         () throw(){
       InitDCtring();
       TheBffSize            = DCStrAppendZone + DCStrEndingZone;
       TheStrBuffer          = (PSTR)malloc(TheBffSize);
@@ -89,6 +90,8 @@
       InitDCtring();
       SetString(ThisStr);
     }
+
+
     void          EnterCriticalArea (){
       AcquireStrMutex();
     }
@@ -143,20 +146,20 @@
       LeaveCriticalArea ();
       return(*this);
     }
-  	DCStr&        AppendChar    (CHAR ThisChar){
+    DCStr&        AppendChar    (CHAR ThisChar){
       return Append(&ThisChar);
-  	}
-  	int Insert(int ThisStart, CSTR ThisInsert){
-  		if(ThisStart            < 0){
-  			ThisStart             = 0;
+    }
+    int           Insert        (int ThisStart, CSTR ThisInsert){
+      if(ThisStart            < 0){
+        ThisStart             = 0;
       } else
-  		if(ThisStart            > TheLen){
-  			ThisStart             = TheLen;
-  		}
-  		int InsertLength        = strlen( ThisInsert );
-  		int TheNewLen           = TheLen;
-  		if(InsertLength         > 0){
-  			TheNewLen            += InsertLength;
+      if(ThisStart            > TheLen){
+        ThisStart             = TheLen;
+      }
+      int InsertLength        = strlen( ThisInsert );
+      int TheNewLen           = TheLen;
+      if(InsertLength         > 0){
+        TheNewLen            += InsertLength;
         EnterCriticalArea();
         Preallocate(TheNewLen);
 
@@ -170,37 +173,35 @@
         memcpy(&TheStrBuffer[StartWhere],   ThisInsert, InsertLength);
         TheLen                = strlen(TheStrBuffer);
 
-  			// CSTR pszBuffer         = GetBuffer( TheNewLen );
-  			// // move existing bytes up (MOVE THE REST OF THE STR MAKING ROOM FOR THE INSERT)
-  			// Checked::memmove_s((pszBuffer + ThisStart + InsertLength), 
+        // CSTR pszBuffer         = GetBuffer( TheNewLen );
+        // // move existing bytes up (MOVE THE REST OF THE STR MAKING ROOM FOR THE INSERT)
+        // Checked::memmove_s((pszBuffer + ThisStart + InsertLength), 
         //                    (TheNewLen - ThisStart - InsertLength + 1) * sizeof( XCHAR ),  // WHO'S THE RETARDED IMBECILE WHO CAME UP WITH THAT?
         //                    (pszBuffer + ThisStart), 
         //                    (TheNewLen - ThisStart - InsertLength + 1) * sizeof( XCHAR ) 
         //                    );
-  			// Checked::memcpy_s( (pszBuffer + ThisStart), 
+        // Checked::memcpy_s( (pszBuffer + ThisStart), 
         //                    (InsertLength * sizeof( XCHAR )), 
         //                    (ThisInsert), 
         //                    (InsertLength*sizeof( XCHAR )) 
         //                    );
-  			// ReleaseBufferSetLength( TheNewLen );
+        // ReleaseBufferSetLength( TheNewLen );
         LeaveCriticalArea ();
-  		}
-  		return( TheNewLen );
-  	}
-  	int Insert(int ThisStart,	CHAR ThisChar){
-      return Insert(ThisStart,	&ThisChar);
-  	}
-
-
+      }
+      return( TheNewLen );
+    }
+    int           Insert        (int ThisStart,  CHAR ThisChar){
+      return Insert(ThisStart,  &ThisChar);
+    }
     DCStr&        Format        (CSTR ThisFormat, ...){
       int       Written;
       char      ThisBuffer    [4096 + DCStrBufferZone];
 
-    	va_list   argList;
-    	va_start( argList, ThisFormat );
-    	// FormatV( pszFormat, argList );
+      va_list   argList;
+      va_start( argList, ThisFormat );
+      // FormatV( pszFormat, argList );
       Written = vsprintf_s( ThisBuffer, 4096, ThisFormat, argList );
-    	va_end(   argList );
+      va_end(   argList );
       return SetString(ThisBuffer);
     }
     static DCStr  Concatenate   (CSTR ThisStr, CSTR ThatStr){
@@ -211,9 +212,9 @@
         PSTR TheTmpBuffer     = (PSTR)malloc(TheTltLen + DCStrBufferZone);
         ZeroMemory(TheTmpBuffer, TheTltLen);
 
-        strcpy(TheTmpBuffer, ThisStr);
+        strcpy(TheTmpBuffer,    ThisStr);
         strcpy(&TheTmpBuffer[TheTm1Len], ThatStr);
-        DCStr  ThisRetStr           = TheTmpBuffer;
+        DCStr  ThisRetStr     = TheTmpBuffer;
         free(TheTmpBuffer);
         return ThisRetStr;
       }
@@ -233,9 +234,9 @@
     CSTR          GetBuffer     (){
       return TheStrBuffer;
     }
-  	int GetBufferLen() const throw(){  // MEASURE UPT0 DCStrAppendZone - DCStrEndingZone
-  		return( TheBffSize - DCStrEndingZone );
-  	}
+    int           GetBufferLen  () const throw(){  // MEASURE UPT0 DCStrAppendZone - DCStrEndingZone
+      return( TheBffSize - DCStrEndingZone );
+    }
     int           GetLength     (){
       return TheLen;
     }
@@ -249,13 +250,13 @@
       ZeroMemory(TheStrBuffer, TheBffSize);
       TheLen                  = 0;
     }
-  	void          Truncate      (int ThisNewLen){
-  		if(TheLen               > ThisNewLen){
+    void          Truncate      (int ThisNewLen){
+      if(TheLen               > ThisNewLen){
         TheLen                = ThisNewLen;
         int ThisGap           = TheBffSize - TheLen;
         ZeroMemory(&TheStrBuffer[TheLen], ThisGap);
       }
-  	}
+    }
     char          GetAt         (int Indx){
       if((Indx                < 0)
       || (Indx               >= TheLen)
@@ -332,7 +333,7 @@
         return -1;
       }
       CSTR ThisRet            =  strstr(&TheStrBuffer[ThisStart], ThisMatch);
-		  return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
+      return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
     }
     int           Find          (CHAR ThisMatch, int ThisStart = 0){
       if((ThisStart           < 0)
@@ -344,7 +345,7 @@
         return -1;
       }
       CSTR ThisRet            = strchr(&TheStrBuffer[ThisStart], ThisMatch);
-		  return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
+      return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
     }
     int           ReverseFind   (CHAR ThisMatch, int ThisStart = 0){
       if((ThisStart           < 0)
@@ -356,7 +357,7 @@
         return -1;
       }
       CSTR ThisRet            = strrchr(&TheStrBuffer[ThisStart], ThisMatch);
-		  return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
+      return( (ThisRet == NULL) ? -1 : int( ThisRet - TheStrBuffer ) );
     }
 
     // RETURN THE NUMBER OF CHANGE OCCURENCE OF CHANGE WITHIN THE TheStrBuffer
@@ -401,144 +402,147 @@
     int           Replace       (CHAR ThisMatch, CHAR ThisReplace){
       return Replace       (&ThisMatch, &ThisReplace);
     }
-  	DCStr         Tokenize      (CSTR ThisToken, int& ThisStart){
-  		if(ThisStart          < 0){
-  			ThisStart           = 0;
+    DCStr         Tokenize      (CSTR ThisToken, int& ThisStart){
+      if(ThisStart            < 0){
+        ThisStart             = 0;
       }
-  		if((ThisToken        == NULL) 
-      || (*ThisToken       == (CHAR)0) 
+      if((ThisToken          == NULL) 
+      || (*ThisToken         == (CHAR)0) 
       ){
-  			if(ThisStart        < TheLen){
-  				return( DCStr(TheStrBuffer + ThisStart) );
-  			}
-  		}	else {
-  			CSTR StartStr       = TheStrBuffer + ThisStart;
-  			CSTR EndStr         = TheStrBuffer + TheLen;
-  			if(StartStr         < EndStr ){
-  				int Including     = strspn( StartStr, ThisToken );
+        if(ThisStart          < TheLen){
+          return( DCStr(TheStrBuffer + ThisStart) );
+        }
+      }  else {
+        CSTR StartStr         = TheStrBuffer + ThisStart;
+        CSTR EndStr           = TheStrBuffer + TheLen;
+        if(StartStr           < EndStr ){
+          int Including       = strspn( StartStr, ThisToken );
 
-  				if( (StartStr     + Including) < EndStr ){
-  					StartStr       += Including;
-  					int Excluding   = strcspn( StartStr, ThisToken );
-  					int ThisFrom    = ThisStart  + Including;
-  					int UntilTo     = Excluding;
-            DCStr ThisRet   = Mid( ThisFrom, UntilTo );
-            ThisStart       = ThisFrom + UntilTo + 1;
+          if(EndStr          >= (StartStr    + Including)){
+            StartStr         += Including;
+            int Excluding     = strcspn( StartStr, ThisToken );
+            int ThisFrom      = ThisStart    + Including;
+            int UntilTo       = Excluding;
+            DCStr ThisRet     = Mid( ThisFrom, UntilTo );
+            ThisStart         = ThisFrom + UntilTo + 1;
 
-  					return(ThisRet);
-  				}
-  			}
-  		}
-  		// return empty string, done tokenizing
-  		ThisStart             = -1;
-      DCStr ThisRet         = Make("");
-  		return( ThisRet );
-  	}
-  	int           Delete        (int Index, int ThisCount = 1){
-  		if(Index                < 0 ){
-  			Index = 0;
+            return(ThisRet);
+          }
+        }
+      }
+      // return empty string, done tokenizing
+      ThisStart               = -1;
+      DCStr ThisRet           = Make("");
+      return( ThisRet );
+    }
+    int           Delete        (int Index, int ThisCount = 1){
+      if(Index                < 0 ){
+        Index = 0;
       } else 
       if(Index               >= TheLen){
         return TheLen;
       }
-  		if(ThisCount           <= 0){
+      if(ThisCount           <= 0){
         return TheLen;
       }
-			int NewLen              = TheLen - ThisCount;
-			int MoveLen             = TheLen - (Index + ThisCount) + 1;
-			memmove_s(      (&TheStrBuffer[Index]), 
-                      (MoveLen), // WHO'S THE RETARDED IMBECILE WHO CAME UP WITH THAT?	
-                      (&TheStrBuffer[Index + ThisCount]), 
-                      (MoveLen) 
+      if((Index + ThisCount)  > TheLen){
+        ThisCount             = (TheLen - Index);
+      }
+      int NewLen              = TheLen  - ThisCount;
+      int MoveLen             = TheLen  - (Index + ThisCount) + 1;
+      memmove_s(                (&TheStrBuffer[Index]), 
+                                (MoveLen), // WHO'S THE RETARDED IMBECILE WHO CAME UP WITH THAT?  
+                                (&TheStrBuffer[Index + ThisCount]), 
+                                (MoveLen) 
                 );
       TheLen                  = strlen(TheStrBuffer);
-  		return(TheLen);
-  	}
-  	// Remove all occurrences of character 'RemoveChar'
-  	int           Remove        (CHAR RemoveChar){
-  		PSTR CurSrc             = TheStrBuffer;
-  		PSTR CurDst             = TheStrBuffer;
-  		PSTR EndStr             = TheStrBuffer + TheLen;
+      return(TheLen);
+    }
+    // Remove all occurrences of character 'RemoveChar'
+    int           Remove        (CHAR RemoveChar){
+      PSTR CurSrc             = TheStrBuffer;
+      PSTR CurDst             = TheStrBuffer;
+      PSTR EndStr             = TheStrBuffer + TheLen;
 
-  		while(CurSrc            < EndStr ){
-  			PSTR NewSrc           = CurSrc  + 1;
-  			if(*CurSrc           != RemoveChar){
-  				int NewSrcGap       = (NewSrc - CurSrc);
-  				PSTR NewDst         = CurDst  + NewSrcGap;
-  				for(int Indx = 0; (CurDst != NewDst) && (Indx < NewSrcGap); Indx++){
-  					*CurDst           = *CurSrc;
-  					CurSrc++;
-  					CurDst++;
-  				}
-  			}
-  			CurSrc                = NewSrc;
-  		}
-  		*CurDst                 = 0;
-  		int ThisNewLen          = int( CurSrc - CurDst );
+      while(CurSrc            < EndStr ){
+        PSTR NewSrc           = CurSrc  + 1;
+        if(*CurSrc           != RemoveChar){
+          int NewSrcGap       = (NewSrc - CurSrc);
+          PSTR NewDst         = CurDst  + NewSrcGap;
+          for(int Indx = 0; (CurDst != NewDst) && (Indx < NewSrcGap); Indx++){
+            *CurDst           = *CurSrc;
+            CurSrc++;
+            CurDst++;
+          }
+        }
+        CurSrc                = NewSrc;
+      }
+      *CurDst                 = 0;
+      int ThisNewLen          = int( CurSrc - CurDst );
       TheLen                  = strlen(TheStrBuffer);   // THEY ARE SUPPOSE TO BE THE SAME. I PREFER TO CHECK
-  		return(TheLen);
-  	}
-  	DCStr&        TrimLeft      (CSTR ThisTarget = " "){
-  		if((ThisTarget         == NULL) 
+      return(TheLen);
+    }
+    DCStr&        TrimLeft      (CSTR ThisTarget = " "){
+      if((ThisTarget         == NULL) 
       || (*ThisTarget        == 0) 
       ){
-  			return( *this );
-  		}
-  		CSTR Pez                = TheStrBuffer; // Pez dispenser.
-  		while((*Pez != 0) 
-      &&    (strchr(ThisTarget, *Pez ) != NULL) 
+        return( *this );
+      }
+      CSTR Pez                = TheStrBuffer; // Pez dispenser.
+      while((*Pez            != 0) 
+      &&    (NULL            != strchr(ThisTarget, *Pez )) 
       ){
-  			Pez++;
-  		}
-  		if(Pez                 != TheStrBuffer ){
-  			int ISkip             = int( Pez - TheStrBuffer );
-  			int TheNewLen         = TheLen   - ISkip;
-  			memmove_s(              TheStrBuffer, 
-                                (TheNewLen + 1),  // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?	
-  				                      Pez, 
+        Pez++;
+      }
+      if(Pez                 != TheStrBuffer ){
+        int ISkip             = int( Pez - TheStrBuffer );
+        int TheNewLen         = TheLen   - ISkip;
+        memmove_s(              TheStrBuffer, 
+                                (TheNewLen + 1),  // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?  
+                                Pez, 
                                 (TheNewLen + 1) 
                   );
         TheLen                = strlen(TheStrBuffer);    
-  		}
-  		return( *this );
-  	}
-  	DCStr&        TrimLeft      (CHAR ThisTarget){
+      }
+      return( *this );
+    }
+    DCStr&        TrimLeft      (CHAR ThisTarget){
       return TrimLeft(&ThisTarget);
-  	}
-  	DCStr&        TrimRight     (CSTR ThisTarget = " "){
-  		if((ThisTarget         == NULL) 
+    }
+    DCStr&        TrimRight     (CSTR ThisTarget = " "){
+      if((ThisTarget         == NULL) 
       || (*ThisTarget        == 0) 
       ){
-  			return( *this );
-  		}
-  		CSTR Pez                = TheStrBuffer; // Pez dispenser.
-  		CSTR LastPart           = NULL;
+        return(*this);
+      }
+      CSTR Pez                = TheStrBuffer; // Pez dispenser.
+      CSTR LastPart           = NULL;
 
-  		while(*Pez             != 0){
-  			if(strchr(ThisTarget, *Pez) != NULL ){
-  				if(LastPart        == NULL){
-  					LastPart          = Pez;
-  				}
-  			} else {
-  				LastPart            = NULL;
-  			}
-  			Pez++;
-  		}
-  		if(LastPart            != NULL ){
-  			int ISkip             = int(LastPart - TheStrBuffer);
-  			Truncate( ISkip );
-  		}
-  		return(*this);
-  	}
-  	DCStr&        TrimRight     (CHAR ThisTarget){
+      while(*Pez             != 0){
+        if(NULL              != strchr(ThisTarget, *Pez)){
+          if(LastPart        == NULL){
+            LastPart          = Pez;
+          }
+        } else {
+          LastPart            = NULL;
+        }
+        Pez++;
+      }
+      if(LastPart            != NULL ){
+        int ISkip             = int(LastPart - TheStrBuffer);
+        Truncate( ISkip );
+      }
+      return(*this);
+    }
+    DCStr&        TrimRight     (CHAR ThisTarget){
       return TrimRight(&ThisTarget);
-  	}
-  	DCStr&        Trim          (CSTR ThisTarget = " "){
-  		return( TrimRight( ThisTarget ).TrimLeft( ThisTarget ) );
-  	}
-  	DCStr&        Trim          (CHAR ThisTarget){
-  		return( TrimRight( &ThisTarget ).TrimLeft( &ThisTarget ) );
-  	}
+    }
+    DCStr&        Trim          (CSTR ThisTarget = " "){
+      return( TrimRight( ThisTarget ).TrimLeft( ThisTarget ) );
+    }
+    DCStr&        Trim          (CHAR ThisTarget){
+      return( TrimRight( &ThisTarget ).TrimLeft( &ThisTarget ) );
+    }
     // +
 
     DCStr         Copy          (CSTR ThisStr){
@@ -559,7 +563,7 @@
     DCStr(CDSTR& ThisStr){ // {TheStrBuffer=0xcccccccc <Error reading characters of string.> TheLen=-858993460 TheBffSize=-858993460 ...}
       SetString(ThisStr.TheStrBuffer);
     }
-    // GETS CALLED JUST NOT WHERE I WOULD HAVE EXPECTED IT!
+
     DCStr&        operator=     (CDSTR& ThisStr){
       // KEPT IN COMMENT FOR REMEMBERING THAT SHIT!
       // THE RETURN IS IRRELEVANT...
