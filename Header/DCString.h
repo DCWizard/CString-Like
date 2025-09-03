@@ -27,14 +27,6 @@
   typedef unsigned char* PBYTE;
   typedef unsigned const char* CBYTE;
   #define ReCast(A) reinterpret_cast< A >
-  union MultiVal {
-    __int64   i64; 
-    double    Dbl;
-    float     Fl;
-    unsigned  Un; 
-    int       Int;
-    char      Char;
-  };
   #define null NULL  
   // CLEAN ACCESS TO VAR TYPE
   #define DSTR  DCStr
@@ -551,15 +543,6 @@
       itoa(ThisValue, ThisBuffer, Base);
       return SetString(ThisBuffer);
     }
-    // I GUESS IT'S TOO MUCH TO ASK
-      // DCStr         FormatValue   (MultiVal ThisValue, CSTR ThisFormat = "%d"){
-      //   // LINK TO MS SUPPORTED FORMAT:
-      //   // https://learn.microsoft.com/en-us/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
-
-      //   char ThisBuffer[256];
-      //   sprintf(ThisBuffer, ThisFormat, ThisValue);
-      //   return SetString(ThisBuffer);
-      // }
     // +
 
     DCStr         Copy          (CSTR ThisStr){
@@ -688,3 +671,4 @@
     }
   }; 
 #endif // DCSTRING_H
+
