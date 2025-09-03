@@ -1,3 +1,4 @@
+// DCString.h
 #pragma once
 #ifndef DCSTRING_H
 #define DCSTRING_H
@@ -8,7 +9,10 @@
 
 #define WIN32_LEAN_AND_MEAN  true
 
-#include <Windows.h>    // FOR HANDLE & CreateMutex
+#ifndef _WINDOWS_
+  #include <Windows.h>    // FOR HANDLE & CreateMutex
+#endif
+
 #include <string.h>     // FOR OBVIOUS LOW STRING FUNCTIONS
 #include <stdio.h>      // FOR vsprintf_s
 #include <malloc.h>     // FOR MALLOCH 
@@ -23,7 +27,14 @@
   typedef unsigned char* PBYTE;
   typedef unsigned const char* CBYTE;
   #define ReCast(A) reinterpret_cast< A >
-
+  union MultiVal {
+    __int64   i64; 
+    double    Dbl;
+    float     Fl;
+    unsigned  Un; 
+    int       Int;
+    char      Char;
+  };
   #define null NULL  
   // CLEAN ACCESS TO VAR TYPE
   #define DSTR  DCStr
@@ -86,11 +97,10 @@
       TheStrBuffer          = (PSTR)malloc(TheBffSize);
       ZeroMemory(TheStrBuffer, TheBffSize);
     }
-    DCStr         (CSTR ThisStr){
+    DCStr                         (CSTR ThisStr){
       InitDCtring();
       SetString(ThisStr);
     }
-
 
     void          EnterCriticalArea (){
       AcquireStrMutex();
@@ -98,6 +108,8 @@
     void          LeaveCriticalArea (){
       ReleaseStrMutex();
     }
+
+
     BOOL          Preallocate   (int ThisSize){
       if(ThisSize            <= TheLen){
         return true;
@@ -120,10 +132,15 @@
       //   return(*this);
       // }
       EnterCriticalArea();
-      if(TheLen               > 0){
+      if((TheStrBuffer       != NULL) // FIXED MEMORY LEAKS.
+      ){
         free(TheStrBuffer);
       }
-      TheLen                  = strlen(ThisStr);
+      if(0                   == ReCast(DWORD)(ThisStr)){
+        TheLen                = 0;
+      } else {
+        TheLen                = strlen(ThisStr);
+      }
       TheBffSize              = TheLen + DCStrBufferZone;
       TheStrBuffer            = (PSTR)malloc(TheBffSize);
       ZeroMemory(TheStrBuffer, TheBffSize);
@@ -484,8 +501,8 @@
         int ISkip             = int( Pez - TheStrBuffer );
         int TheNewLen         = TheLen   - ISkip;
         memmove_s(              TheStrBuffer, 
-                                (TheNewLen + 1),   // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?  
-                                Pez,               // WHAT? ARE YOU GOING TO SHRINK IT, IF IT'S SMALLER?
+                                (TheNewLen + 1),  // WHO'S THE RETARDED MORON WHO CAME UP WITH THAT IDEA?  
+                                Pez, 
                                 (TheNewLen + 1) 
                   );
         TheLen                = strlen(TheStrBuffer);    
@@ -529,6 +546,20 @@
     DCStr&        Trim          (CHAR ThisTarget){
       return( TrimRight( &ThisTarget ).TrimLeft( &ThisTarget ) );
     }
+    DCStr         intValue      (int ThisValue, int Base = 10){
+      char ThisBuffer[128];
+      itoa(ThisValue, ThisBuffer, Base);
+      return SetString(ThisBuffer);
+    }
+    // I GUESS IT'S TOO MUCH TO ASK
+      // DCStr         FormatValue   (MultiVal ThisValue, CSTR ThisFormat = "%d"){
+      //   // LINK TO MS SUPPORTED FORMAT:
+      //   // https://learn.microsoft.com/en-us/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
+
+      //   char ThisBuffer[256];
+      //   sprintf(ThisBuffer, ThisFormat, ThisValue);
+      //   return SetString(ThisBuffer);
+      // }
     // +
 
     DCStr         Copy          (CSTR ThisStr){
