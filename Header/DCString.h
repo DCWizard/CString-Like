@@ -18,14 +18,6 @@
 #ifndef _WINDOWS_
   #include <Windows.h>    // FOR HANDLE & CreateMutex
 #endif
-  union MultiVal {
-    __int64   i64; 
-    double    Dbl;
-    float     Fl;
-    unsigned  Un; 
-    int       Int;
-    char      Char;
-  };
 
 #include <string.h>     // FOR OBVIOUS LOW STRING FUNCTIONS
 #include <stdio.h>      // FOR vsprintf_s
@@ -47,62 +39,6 @@
   #define DSTR  DCStr
   #define CDSTR const DCStr
 
-// -------------------- <Memory Mngr> --------------
-  int     SlotCount          = 0;
-  bool    SlotInited         = false;
-  #define SlotSize             4096
-  void*   MemorySlot[SlotSize];  
-  void*   AllocSDCMem          (int HowMuch){
-    if(!(SlotInited)){
-      ZeroMemory(MemorySlot, sizeof(MemorySlot));
-      SlotInited             = true;
-    }
-    if(SlotCount            >= SlotSize - 2){
-      perror("Not Enough Mem slot.");
-      throw("Not Enough Mem slot.");
-      return null;
-    }
-
-    void* ThisBuffer         = malloc(HowMuch); 
-    // CHECK IF PTR ALREADY IN USE
-    for(int Indx=0; Indx     < (SlotSize - 1); Indx++){
-      if(MemorySlot[Indx]   == ThisBuffer){
-        perror("Re-Allocating the same block without having been freed???");
-        MemorySlot[Indx]     = 0;
-        SlotCount++;
-        return ThisBuffer;
-      }
-    }
-    // FIND A FREE SLOT. + STORE PTR
-    bool PlacedMem           = false;
-    for(int Indx = 0;Indx    < (SlotSize - 1); Indx++){
-      if(MemorySlot[Indx]   == 0){
-        MemorySlot[Indx]     = ThisBuffer;
-        PlacedMem            = true; 
-        break;
-      }
-    }
-    if(!(PlacedMem)){
-      perror("Could not find a place to put new Memory alloc.");
-    }
-    return ThisBuffer;
-  }
-  void    FreeSDCMem           (void* WhichOne){
-    bool FoundMem            = false;
-    for(int Indx=0; Indx     < (SlotSize - 1); Indx++){
-      if(MemorySlot[Indx]   == WhichOne){
-        MemorySlot[Indx]     = 0;
-        free(WhichOne);
-        FoundMem             = true;
-        SlotCount--;
-        return;
-      }
-    }
-    // MEMORY NOT FOUND ALREADY DELETED
-    perror("Multiple block freeing.");
-    throw("Multiple block freeing.");
-    return;
-  }
 // -------------------- class DCStr ----------------
   class DCStr {
    public: 
@@ -651,16 +587,6 @@
       _itoa(ThisValue, ThisBuffer, Base);
       return SetString(ThisBuffer);
     }
-
-    // I GUESS IT'S TOO MUCH TO ASK
-      // DCStr         FormatValue   (MultiVal ThisValue, CSTR ThisFormat = "%d"){
-      //   // LINK TO MS SUPPORTED FORMAT:
-      //   // https://learn.microsoft.com/en-us/cpp/c-runtime-library/format-specification-syntax-printf-and-wprintf-functions?view=msvc-170
-
-      //   char ThisBuffer[256];
-      //   sprintf(ThisBuffer, ThisFormat, ThisValue);
-      //   return SetString(ThisBuffer);
-      // }
     // +
 
     DCStr         Copy            (CSTR ThisStr){
@@ -797,64 +723,6 @@
       return( CompareString(Str1, Str2)  < 0 );
     }
   }; 
-// ----------- vsprintf that doesn't CRASH ---------
-  int VStrFormat(CSTR ThisFormat, PSTR TheBuffer, int TheSize, va_list TheVList){
-  int   ThisLen   = 0;
-  char  Previous  = '\0';
-  union PrintUnion {
-    int     AsInt;
-    float   AsFloat;
-    char    AsChar;
-    char*   AsString;
-  } Printable;
-  for(int Indx   = 0;         ThisFormat[Indx] != 0; ++Indx){
-    char ThisChar           = ThisFormat[Indx];    
-    if(ThisLen             >= TheSize - 1){
-      TheBuffer[TheSize]    = 0;
-      return TheSize;
-    }
-    if(Previous            == '%'){
-      switch( ThisChar ) {   
-      case 'd':{
-        char NumBuffer[128];
-        Printable.AsInt     = va_arg( TheVList, int );
-        itoa(Printable.AsInt, NumBuffer, 10);
-        int ThisNumLen      = strlen(NumBuffer);
-        if(ThisNumLen       < (TheSize - ThisLen)){
-          strncpy(&TheBuffer[ThisLen], NumBuffer, ThisNumLen);
-          ThisLen          += ThisNumLen;
-        }
-      } break;
-      case 's':{
-        Printable.AsString  = va_arg( TheVList, char* );
-        int ThisStrLen      = strlen(Printable.AsString);
-        if(ThisStrLen       < (TheSize - ThisLen)){
-          strncpy(&TheBuffer[ThisLen], Printable.AsString, ThisStrLen);
-          ThisLen          += (ThisStrLen);
-        }
-      } break;
-      case 'c':
-        Printable.AsChar    = va_arg( TheVList, char );
-        TheBuffer[ThisLen++]= Printable.AsChar;
-        break;
-      case '%':
-        TheBuffer[ThisLen++]= '%';
-        break;
-      default:
-        if(ThisLen          < (TheSize - 3)){
-          TheBuffer[ThisLen++]= 'N';
-          TheBuffer[ThisLen++]= 'A';
-        }
-        break;
-      }
-    } else 
-    if(ThisChar            != '%'){
-      TheBuffer[ThisLen++]  = ThisChar;
-    }
-    Previous                = ThisChar;
-  }
-  TheBuffer[ThisLen]        = 0;
-  return ThisLen;
-}
 
 #endif // DCSTRING_H
+
